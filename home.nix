@@ -67,6 +67,17 @@ in
     };
   };
 
+  programs.ssh = {
+    enable = true;
+    # SSH keys for Git hosting services
+    matchBlocks = {
+      "github.com" = {
+        identityFile = "~/.ssh/id_rsa";
+        identitiesOnly = true;
+      };
+    };
+  };
+
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
   home.file = {
