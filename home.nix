@@ -39,6 +39,14 @@ in
     # (pkgs.writeShellScriptBin "my-hello" ''
     #   echo "Hello, ${config.home.username}!"
     # '')
+
+    # Alacritty needs nixGL to find the system's OpenGL/Mesa drivers on
+    # non-NixOS distros (Ubuntu). This wraps it so nixGLIntel is used
+    # automatically, and launches straight into Zellij.
+    # Requires: nix profile install github:nix-community/nixGL#nixGLIntel
+    (pkgs.writeShellScriptBin "alacritty-gl" ''
+      exec nixGLIntel alacritty -e zellij "$@"
+    '')
   ];
 
 
@@ -78,6 +86,32 @@ in
     };
   };
 
+  programs.alacritty = {
+    enable = true;
+  };
+
+  programs.zellij = {
+    enable = true;
+  };
+
+  # GNOME custom keybinding: Ctrl+Alt+T opens Alacritty (via nixGL wrapper),
+  # launching straight into Zellij.
+  dconf.settings = {
+    "org/gnome/settings-daemon/plugins/media-keys" = {
+      custom-keybindings = [
+        "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
+      ];
+      # Disable Ubuntu's built-in Ctrl+Alt+T -> gnome-terminal binding
+      terminal = [];
+    };
+
+    "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+      name = "Open Alacritty";
+      command = "${config.home.homeDirectory}/.nix-profile/bin/alacritty-gl";
+      binding = "<Control><Alt>t";
+    };
+  };
+
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
   home.file = {
@@ -111,11 +145,9 @@ in
   #
   home.sessionVariables = {
     # EDITOR = "emacs";
-    TERMINAL = "alacritty";
+    TERMINAL = "alacritty-gl";
   };
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 }
-
-
